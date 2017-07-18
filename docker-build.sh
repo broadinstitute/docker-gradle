@@ -53,6 +53,8 @@ do
   # ensure Dockerfile does not exist
   rm -f Dockerfile
 
+  echo "Checking if gradle version (${version}) needs to be built..."
+
   # initialize flag for this version based on FORCE_BUILD value
   build_openjdk=${FORCE}
   build_oracle=${FORCE}
@@ -61,28 +63,34 @@ do
   if [ "${FORCE}" = 0 ]
   then
 
+    echo "Checking for existence of previous build docker (broadinstitute/gradle:oracle-${version})..."
     # see if version exists on docker hub
     docker pull broadinstitute/gradle:oracle-${version}
     retcode=$?
 
     if [ "${retcode}" -ne "0" ]
     then
-       set build_oracle=1
+       echo "Need to build Oracle version"
+       build_oracle=1
     fi
 
+    echo "Checking for existence of previous build docker (broadinstitute/gradle:openjdk-${version})..."
     # see if version exists on docker hub
     docker pull broadinstitute/gradle:openjdk-${version}
     retcode=$?
 
     if [ "${retcode}" -ne "0" ]
     then
-       set build_openjdk=1
+       echo "Need to build OpenJDK version "
+       build_openjdk=1
     fi
 
   fi
 
-  if [ "${build_oracle}" = "1" ]
+  if [ "${build_oracle}" -eq "1" ]
   then
+
+    echo "Building docker (broadinstitute/gradle:oracle-${version})"
     # create Dockerfile from template
     sed -e "s;GRADLE_NUMBER;${version};" < Dockerfile.oracle > Dockerfile
 
@@ -95,15 +103,18 @@ do
     retcode=$?
     errorout $retcode "ERROR: Build failed!"
 
+    echo "Tagging docker (broadinstitute/gradle:oracle-${version}_${BUILD_NUMBER})"
     docker tag broadinstitute/gradle:oracle-${version} broadinstitute/gradle:oracle-${version}_${BUILD_NUMBER}
     retcode=$?
     errorout $retcode "Build successful but could not tag to build number"
 
+    echo "Pushing docker (broadinstitute/gradle:oracle-${version})"
     docker push broadinstitute/gradle:oracle-${version}
     echo "Pushing images to dockerhub"
     retcode=$?
     errorout $retcode "Pushing new image to docker hub"
 
+    echo "Pushing docker (broadinstitute/gradle:oracle-${version}_${BUILD_NUMBER})"
     docker push broadinstitute/gradle:oracle-${version}_${BUILD_NUMBER}
     retcode=$?
     errorout $retcode "Pushing build_number tag image to docker hub"
@@ -120,8 +131,9 @@ do
     errorout $cleancode "Some images were not able to be cleaned up"
   fi
 
-  if [ "${build_openjdk}" = "1" ]
+  if [ "${build_openjdk}" -eq "1" ]
   then
+    echo "Building docker (broadinstitute/gradle:openjdk-${version})"
     # create Dockerfile from template
     sed -e "s;GRADLE_NUMBER;${version};" < Dockerfile.openjdk > Dockerfile
 
@@ -134,15 +146,18 @@ do
     retcode=$?
     errorout $retcode "ERROR: Build failed!"
 
+    echo "Tagging docker (broadinstitute/gradle:oracle-${version}_${BUILD_NUMBER})"
     docker tag broadinstitute/gradle:openjdk-${version} broadinstitute/gradle:openjdk-${version}_${BUILD_NUMBER}
     retcode=$?
     errorout $retcode "Build successful but could not tag to build number"
 
+    echo "Pushing docker (broadinstitute/gradle:oracle-${version})"
     docker push broadinstitute/gradle:openjdk-${version}
     echo "Pushing images to dockerhub"
     retcode=$?
     errorout $retcode "Pushing new image to docker hub"
 
+    echo "Pushing docker (broadinstitute/gradle:oracle-${version}_${BUILD_NUMBER})"
     docker push broadinstitute/gradle:openjdk-${version}_${BUILD_NUMBER}
     retcode=$?
     errorout $retcode "Pushing build_number tag image to docker hub"
