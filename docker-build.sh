@@ -54,8 +54,8 @@ do
   rm -f Dockerfile
 
   # initialize flag for this version based on FORCE_BUILD value
-  build_openjdk=${FORCE_BUILD}
-  build_oracle=${FORCE_BUILD}
+  build_openjdk=${FORCE}
+  build_oracle=${FORCE}
 
   # do not both checking if docker image exists if we are forcing a build
   if [ "${FORCE}" = 0 ]
@@ -65,15 +65,19 @@ do
     docker pull broadinstitute/gradle:oracle-${version}
     retcode=$?
 
-    # if retcode bad - 
-    # set build_oracle=1
+    if [ "${retcode}" -ne "0" ]
+    then
+       set build_oracle=1
+    fi
 
     # see if version exists on docker hub
     docker pull broadinstitute/gradle:openjdk-${version}
     retcode=$?
 
-    # if retcode bad - 
-    # set build_openjdk=1
+    if [ "${retcode}" -ne "0" ]
+    then
+       set build_openjdk=1
+    fi
 
   fi
 
@@ -155,5 +159,7 @@ do
   fi
 
 done
+
+test -f Dockerfile && rm -f Dockerfile
 
 exit 0
